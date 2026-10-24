@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EJU听力- 内部模拟第1回</title>
+  <style>
+    :root {
+      --bg-color: #f6f5f2;
+      --card-bg: #ffffff;
+      --text-main: #2c2c2c;
+      --text-sub: #7a7a7a;
+      --accent: #d9534f;
+      --bar-bg: #1e2029;
+      --star-active: #f5b942;
+    }
+    body.dark {
+      --bg-color: #121318;
+      --card-bg: #1e2028;
+      --text-main: #e8e8e8;
+      --text-sub: #9e9e9e;
+      --bar-bg: #0d0e12;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Microsoft YaHei", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding-bottom: 145px;
+      transition: background 0.3s, color 0.3s;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .brand { display: flex; flex-direction: column; }
+    .brand-title { font-size: 20px; font-weight: 800; color: #b7372a; letter-spacing: 0.5px; }
+    .brand-sub { font-size: 11px; color: var(--text-sub); }
+    .header-controls { display: flex; gap: 10px; align-items: center; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid rgba(128,128,128,0.25);
+      background: var(--card-bg); color: var(--text-main);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px;
+    }
+
+    /* 题目选择黑条 */
+    .nav-bar {
+      background: #1a1c24;
+      color: #fff;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .select-wrapper {
+      display: flex; align-items: center; gap: 10px; flex: 1;
+    }
+    .question-select {
+      background: #fff; color: #222;
+      border: none; padding: 6px 12px;
+      border-radius: 20px; font-weight: 600; font-size: 14px;
+      cursor: pointer; outline: none; max-width: 220px;
+    }
+    .current-title {
+      font-size: 13px; color: #ddd; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .filter-star-btn {
+      background: #fff; border: none; border-radius: 18px;
+      padding: 4px 12px; cursor: pointer; font-size: 16px;
+    }
+    .filter-star-btn.active { background: #fff3cd; }
+
+    /* 提示气泡 */
+    .top-banner {
+      max-width: 680px; margin: 12px auto 4px; padding: 0 16px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    }
+    .question-prompt {
+      font-size: 13px; color: var(--text-sub); line-height: 1.5; flex: 1;
+    }
+    .toast-tip {
+      background: #4a4a4a; color: #fff; font-size: 12px;
+      padding: 6px 12px; border-radius: 8px; white-space: nowrap;
+    }
+
+    /* 单词卡片列表 */
+    .container { max-width: 680px; margin: 0 auto; padding: 8px 16px; }
+    .vocab-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border: 1px solid rgba(128,128,128,0.1);
+    }
+    .vocab-left {
+      display: flex; align-items: center; gap: 14px; flex: 1;
+    }
+    .kana {
+      font-size: 18px; font-weight: 700; min-width: 125px;
+    }
+    .tts-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1.5px solid #d4878f; background: rgba(212, 135, 143, 0.1);
+      color: #c95b66; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 13px; flex-shrink: 0;
+    }
+    .tts-btn:active { transform: scale(0.92); }
+    .meaning-box {
+      cursor: pointer; user-select: none; flex: 1; padding-left: 8px;
+    }
+    .kanji { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+    .meaning { font-size: 14px; color: var(--text-sub); }
+    .dots {
+      font-size: 20px; color: #8aa69b; letter-spacing: 4px; font-weight: bold;
+    }
+    .meaning-box.hidden .kanji,
+    .meaning-box.hidden .meaning { display: none; }
+    .meaning-box:not(.hidden) .dots { display: none; }
+
+    .star-btn {
+      background: none; border: none; font-size: 22px;
+      color: #b0b0b0; cursor: pointer; padding: 4px;
+    }
+    .star-btn.starred { color: var(--star-active); }
+
+    /* EJU专属：原文与答案折叠区 */
+    .eju-extra {
+      margin-top: 20px; background: var(--card-bg);
+      border-radius: 12px; padding: 16px;
+      border: 1px solid rgba(128,128,128,0.15);
+    }
+    .extra-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .toggle-btn {
+      padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.3);
+      background: transparent; color: var(--text-main); font-size: 13px;
+      cursor: pointer; font-weight: 600;
+    }
+    .extra-content {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px dashed rgba(128,128,128,0.2);
+      font-size: 15px; line-height: 1.8; display: none;
+      white-space: pre-wrap;
+    }
+    .extra-content.show { display: block; }
+    .answer-badge {
+      display: inline-block; background: #2b7a4b; color: #fff;
+      padding: 3px 10px; border-radius: 6px; font-weight: bold;
+    }
+
+    /* 底部固定播放器 */
+    .bottom-dock {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bar-bg); color: #fff; z-index: 30;
+    }
+    .sub-dock {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 20px; background: #262936; font-size: 13px; color: #ccc;
+    }
+    .sub-dock span { cursor: pointer; }
+    .progress-wrap {
+      padding: 6px 20px 0; display: flex; align-items: center; gap: 10px; font-size: 11px; color: #aaa;
+    }
+    .progress-bar { flex: 1; accent-color: #fff; cursor: pointer; height: 4px; }
+    .player-controls {
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 10px 16px 18px; max-width: 600px; margin: 0 auto;
+    }
+    .ctrl-btn {
+      background: none; border: none; color: #fff;
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 8px;
+    }
+    .play-btn { font-size: 28px; width: 54px; height: 54px; }
+    .speed-btn { background: #2c2f3b; font-size: 14px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-title">EJU听力</div>
+      <div class="brand-sub">EJU Listening第1回 (全27題)</div>
+    </div>
+    <div class="header-controls">
+      <button class="icon-btn" id="toggleAllMeaningBtn" title="全部显示/隐藏释义">👁️</button>
+      <button class="icon-btn" id="themeBtn" title="切换夜间模式">🌙</button>
+    </div>
+  </header>
+
+  <div class="nav-bar">
+    <div class="select-wrapper">
+      <select class="question-select" id="questionSelect"></select>
+      <span class="current-title" id="questionShortTitle"></span>
+    </div>
+    <button class="filter-star-btn" id="filterStarBtn" title="只看收藏生词">⭐</button>
+  </div>
+
+  <div class="top-banner">
+    <div class="question-prompt" id="questionIntro"></div>
+    <div class="toast-tip">耳朵预热，而后听题</div>
+  </div>
+
+  <div class="container">
+    <div id="vocabList"></div>
+
+    <div class="eju-extra">
+      <div class="extra-btns">
+        <button class="toggle-btn" id="toggleScriptBtn">📜 展开听力原文与选项</button>
+        <button class="toggle-btn" id="toggleAnswerBtn">✅ 查看正确答案</button>
+      </div>
+      <div class="extra-content" id="scriptBox"></div>
+      <div class="extra-content" id="answerBox"></div>
+    </div>
+  </div>
+
+  <div class="bottom-dock">
+    <div class="sub-dock">
+      <span id="prevQBtn">⬅️ 上一题</span>
+      <span id="audioStatus">就绪</span>
+      <span id="nextQBtn">下一题 ➡️</span>
+    </div>
+    <div class="progress-wrap">
+      <span id="curTime">00:00</span>
+      <input type="range" class="progress-bar" id="progressBar" value="0" min="0" step="0.1">
+      <span id="durTime">00:00</span>
+    </div>
+    <div class="player-controls">
+      <button class="ctrl-btn" id="resetBtn" title="重头播放">✕</button>
+      <button class="ctrl-btn" id="rewBtn" title="后退5秒">↺ 5</button>
+      <button class="ctrl-btn play-btn" id="playBtn">▶</button>
+      <button class="ctrl-btn" id="fwdBtn" title="前进5秒">5 ↻</button>
+      <button class="ctrl-btn speed-btn" id="speedBtn">1x</button>
+    </div>
+  </div>
+
+  <audio id="audioPlayer"></audio>
+
+  <script>
+    // === 第1回 全27題 (聴読解 1~12番 + 聴解 13~27番) 完整数据 ===
+    const EJU_DATA = [
+      {
+        id: "0101",
+        title: "聴読解 1番",
+        audio: "0101.mp3",
+        answer: "④ (解答番号 1)",
+        intro: "先生が、情報教育について話しています。この先生が最後にする質問の答えはどれですか。",
+        script: `情報化社会が進展していく中で、情報教育の重要性は今後ますます高まっていくと考えられます。そこで、今日は、情報について何を学べばよいのか、ということについてお話ししたいと思います。\n情報教育は大きく4つに分けることができます。第1は、新聞やテレビなど、いろいろなメディアの特性を知ることです。第2は、どんなときにどのメディアを使ったらいいか判断できるようにすることです。これは第1の内容の応用編と言っていいでしょう。第3は、メディアが私たちの暮らしや社会にどんな影響を与えているかを学ぶことです。特に普段意識されることのない隠れた影響について知ることが大切です。そして第4は、メディア社会で安全に行動するにはどうしたらいいかを理解することです。\nでは、自分の個人情報がネット上に拡散してしまわないようにするためには、何を学べばよいでしょうか。`,
+        vocab: [
+          { kana: "しんてん", kanji: "進展", meaning: "进展，发展" },
+          { kana: "じゅうようせい", kanji: "重要性", meaning: "重要性" },
+          { kana: "とくせい", kanji: "特性", meaning: "特性，特征" },
+          { kana: "おうようへん", kanji: "応用編", meaning: "应用篇" },
+          { kana: "えいきょう", kanji: "影響", meaning: "影响" },
+          { kana: "いしき", kanji: "意識", meaning: "意识，察觉" },
+          { kana: "こじんじょうほう", kanji: "個人情報", meaning: "个人信息" },
+          { kana: "かくさん", kanji: "拡散", meaning: "扩散，散播" }
+        ]
+      },
+      {
+        id: "0102",
+        title: "聴読解 2番",
+        audio: "0102.mp3",
+        answer: "③ (解答番号 2)",
+        intro: "先生がマーケティングの授業で価格戦略について話しています。この先生が最後にする質問の答えはどれですか。",
+        script: `商品をたくさん売るためには、商品の価格をどのように決めればいいのでしょうか。今日は4つの考え方についてお話しします。\n1つ目は威光効果というものです。これは、価格は高ければ高いほどよい、それを買うことで自分の価値も上がるという人の心理を利用したもので、高ければ高いほど売れるという、通常とは逆の購買行動を引き起こします。次に、端数効果というものがあります。これは皆さんもよく見かけるでしょう。値段を3000円とするよりも、そこからほんの少し値引きした価格にしたほうが、お得な感じがするという心理を利用しています。それから、習慣効果というのもあります。自動販売機の缶コーヒーは130円で売られていることが多いので、人々はこの価格設定に慣れています。そこで、110円で缶コーヒーを売り出すと、みんな「安い」と感じてつい買ってしまうのです。そのほかにも、1つだと398円だけれど3つで1000円というような売り方をする場合もあり、これは抱き合わせという戦略です。\nでは、こんな例を考えてみましょう。あるコンビニエンスストアで、140円でパンを売ろうとしたら売れなかったので、売れない理由を調べに売り場に行ってみました。するとお店に並んでいるパンは110円から130円という価格帯のものばかりでした。そこで売りたいパンの値段を120円にしたら売れるようになりました。このケースでは、どのような価格戦略が成功したと言えるでしょうか。`,
+        vocab: [
+          { kana: "かかくせんりゃく", kanji: "価格戦略", meaning: "价格战略/定价策略" },
+          { kana: "いこうこうか", kanji: "威光効果", meaning: "威光效应（声望定价）" },
+          { kana: "こうばいこうどう", kanji: "購買行動", meaning: "购买行为" },
+          { kana: "はすうこうか", kanji: "端数効果", meaning: "尾数效应（零头定价）" },
+          { kana: "ねびき", kanji: "値引き", meaning: "降价，打折" },
+          { kana: "しゅうかんこうか", kanji: "習慣効果", meaning: "习惯效应" },
+          { kana: "だきあわせ", kanji: "抱き合わせ", meaning: "捆绑销售，搭配销售" },
+          { kana: "かかくたい", kanji: "価格帯", meaning: "价格带，价格区间" }
+        ]
+      },
+      {
+        id: "0103",
+        title: "聴読解 3番",
+        audio: "0103.mp3",
+        answer: "③ (解答番号 3)",
+        intro: "女子学生と男子学生が大学の体育の授業について話しています。この女子学生が体育の第2希望として申し込むのはどれですか。",
+        script: `女子学生：大学に入ってまで体育をやらなきゃいけないなんて、いやね。\n男子学生：なんで？ 体を動かせていいじゃない。自分の好きなスポーツを選べるんだしさ。\n女子学生：私は文学部キャンパスでできるものにするわ。移動するのいやだから。\n男子学生：僕はちゃんと体を動かすものにしたいな。\n女子学生：私は弓道にしとこうかな。\n男子学生：弓道人気あるみたいだから、第2希望もちゃんと考えておいたほうがいいよ。\n女子学生：そうなんだ。どれにしようかな。\n男子学生：これにしたら？ 文学部の体育館だよ。\n女子学生：私、球技苦手なのよ。\n男子学生：じゃあ、これは？ ボール使わないよ。\n女子学生：うーん。それも苦手だけど、仕方ないわね。第2希望はそれにしておくわ。`,
+        vocab: [
+          { kana: "たいいく", kanji: "体育", meaning: "体育" },
+          { kana: "いどう", kanji: "移動", meaning: "移动，换校区" },
+          { kana: "きゅうどう", kanji: "弓道", meaning: "弓道（日本射箭）" },
+          { kana: "だいにきぼう", kanji: "第2希望", meaning: "第二志愿" },
+          { kana: "たいいくかん", kanji: "体育館", meaning: "体育馆" },
+          { kana: "きゅうぎ", kanji: "球技", meaning: "球类运动" },
+          { kana: "にがて", kanji: "苦手", meaning: "不擅长，发怵" },
+          { kana: "しかたない", kanji: "仕方ない", meaning: "没办法，不得已" }
+        ]
+      },
+      {
+        id: "0104",
+        title: "聴読解 4番",
+        audio: "0104.mp3",
+        answer: "② (解答番号 4)",
+        intro: "先生が授業でカニについて話しています。この先生が今日特に詳しく取り上げるのは、どのカニですか。",
+        script: `カニといえばみんな横歩きしかできない、と思う人も多いかもしれませんが、前や後ろに進むことのできるカニもいます。まず、横歩きしかできないカニとしては、陸に棲むイワガニやイソガニ、あるいは河口や干潟に棲むアカテガニやベンケイガニなどが挙げられます。ハサミが体に対して大きすぎることが、前に進む邪魔をしています。\n一方、海の深いところに棲んでいるケアシガニやタカアシガニは、比較的自由に動く細長い脚を使って、横はもちろん前にも後ろにも移動することができます。細長い脚で自分の体を持ち上げることによって、海底の複雑な地形を動き回ることが可能となっているのです。ケアシガニとタカアシガニの区別は比較的簡単です。毛や棘がいっぱい生えているのがケアシガニ、ないのがタカアシガニです。今日は横歩き以外にも移動ができるカニについて詳しくお話ししたいと思います。`,
+        vocab: [
+          { kana: "よこあるき", kanji: "横歩き", meaning: "横着走" },
+          { kana: "りくにすむ", kanji: "陸に棲む", meaning: "栖息在陆地上" },
+          { kana: "かこう", kanji: "河口", meaning: "河口" },
+          { kana: "ひがた", kanji: "干潟", meaning: "滩涂，泥滩" },
+          { kana: "はさみ", kanji: "ハサミ", meaning: "蟹钳，螯" },
+          { kana: "じゃま", kanji: "邪魔", meaning: "妨碍，阻碍" },
+          { kana: "ほそながい", kanji: "細長い", meaning: "细长的" },
+          { kana: "とげ", kanji: "棘", meaning: "刺，棘刺" }
+        ]
+      },
+      {
+        id: "0105",
+        title: "聴読解 5番",
+        audio: "0105.mp3",
+        answer: "① (解答番号 5)",
+        intro: "先生が、ニュース原稿の書き方について説明しています。この先生が特に重要と言っているのはどこですか。",
+        script: `ニュース番組で使う原稿は、よく整理されている必要があります。内容を整理しないまま報道してしまうと、視聴者は「あれ、今、何の話だっけ？」と、困惑してしまうからです。\nでは、ニュース原稿はどのように整理されているのでしょうか。実はニュース原稿は、大きく4つの部分から構成されています。はじめにタイトルやリードと呼ばれる短い文や文章があり、次に詳しい内容、それからニュースの背景となる事柄、最後に今後の見通し、という順番で構成されているのです。わかりやすいニュース原稿にするためには、話題をはっきり示すことが必要不可欠です。話題を把握することで、視聴者のほうも話を聞く心構えができるからです。`,
+        vocab: [
+          { kana: "げんこう", kanji: "原稿", meaning: "原稿，稿件" },
+          { kana: "ほうどう", kanji: "報道", meaning: "报道" },
+          { kana: "しちょうしゃ", kanji: "視聴者", meaning: "观众，收视者" },
+          { kana: "こんわく", kanji: "困惑", meaning: "困惑，不知所措" },
+          { kana: "こうせい", kanji: "構成", meaning: "构成，组成" },
+          { kana: "ことがら", kanji: "事柄", meaning: "事情，事项" },
+          { kana: "みとおし", kanji: "見通し", meaning: "展望，预测，前景" },
+          { kana: "ひつようふかけつ", kanji: "必要不可欠", meaning: "必不可少" },
+          { kana: "こころがまえ", kanji: "心構え", meaning: "心理准备，思想准备" }
+        ]
+      },
+      {
+        id: "0106",
+        title: "聴読解 6番",
+        audio: "0106.mp3",
+        answer: "④ (解答番号 6)",
+        intro: "先生が地図を見せながら、フィールドワーク調査の分担を決めています。この先生の話によると、グループ1はどの島を担当することになりましたか。",
+        script: `今日はフィールドワークの分担を決めましょう。半島の先から500キロから1000キロのところに、大小5つの島があるわけですが、半島に一番近い島は無人島なので、今回の調査対象とはなりません。まず、半島の先から550キロ南西にある犬島ですが、ここは最近、観光地として人気が高まり、特に夏はサーフィンをする若者で賑わいます。そのすぐ南にある猫島は大きな砂浜がないので、観光客はあまり訪れません。犬島の近くであるにもかかわらず、昔ながらの住民生活が保たれています。そして半島から830キロ南東にある鳥島は、その名の通り海鳥の宝庫となっていて、絶滅危惧種に登録された野鳥もいます。最後に、半島から800キロ真南にある藍島は、今も地元の植物を使った染物産業が盛んです。\nそれでは、まず、グループ1はこの島に行って、絶滅の危機に瀕した野鳥と現地の人々との関わりに焦点を当てて調査を行ってください。`,
+        vocab: [
+          { kana: "ぶんたん", kanji: "分担", meaning: "分担，分工" },
+          { kana: "はんとう", kanji: "半島", meaning: "半岛" },
+          { kana: "むじんとう", kanji: "無人島", meaning: "无人岛" },
+          { kana: "にぎわう", kanji: "賑わう", meaning: "热闹，繁荣" },
+          { kana: "ほうこ", kanji: "宝庫", meaning: "宝库" },
+          { kana: "ぜつめつきぐしゅ", kanji: "絶滅危惧種", meaning: "濒危物种" },
+          { kana: "そめものさんぎょう", kanji: "染物産業", meaning: "印染产业" },
+          { kana: "しょうてんをあてる", kanji: "焦点を当てる", meaning: "聚焦于，把焦点对准" }
+        ]
+      },
+      {
+        id: "0107",
+        title: "聴読解 7番",
+        audio: "0107.mp3",
+        answer: "② (解答番号 7)",
+        intro: "大学の就職担当者が学生に会社の選び方についてアドバイスしています。この担当者のアドバイスによれば、避けたほうがいいのはどの会社ですか。",
+        script: `会社を選ぶとき、誰でも給料や労働時間などの条件が気になりますが、そういうことだけで選ばないほうがいいと思います。皆さんは、例えば社員の平均年齢を見ていますか。設立間もない会社なら、若い社員ばかりで頑張っているということもあるでしょう。しかし、設立後何十年も経っているのに若い世代の社員が多く平均年齢があまりにも低いという場合、長く働き続けられない職場だということも考えられます。仕事がきつすぎるとか、やりがいがないとか、あるいはちょっとした理由で社員を解雇するような人がいるという可能性も否めません。ですから、初任給や休みの日数にばかりに目を奪われないで、その会社に関するあらゆる情報に目を通すようにしましょう。`,
+        vocab: [
+          { kana: "ろうどうじかん", kanji: "労働時間", meaning: "劳动时间，工时" },
+          { kana: "へいきんねんれい", kanji: "平均年齢", meaning: "平均年龄" },
+          { kana: "せつりつまもない", kanji: "設立間もない", meaning: "刚成立不久" },
+          { kana: "やりがい", kanji: "やりがい", meaning: "干劲，价值感" },
+          { kana: "かいこ", kanji: "解雇", meaning: "解雇，开除" },
+          { kana: "いなめない", kanji: "否めない", meaning: "不可否认，难以否定" },
+          { kana: "しょにんきゅう", kanji: "初任給", meaning: "起薪，初始工资" },
+          { kana: "めをうばわれる", kanji: "目を奪われる", meaning: "被吸引住目光，只盯着" }
+        ]
+      },
+      {
+        id: "0108",
+        title: "聴読解 8番",
+        audio: "0108.mp3",
+        answer: "① (解答番号 8)",
+        intro: "男子学生と女子学生がレポートの内容について話しています。この女子学生の話によると、公立高校の教育費の推移を表したグラフとして適当なものはどれですか。",
+        script: `男子学生：教育学の授業のレポートだけど、テーマは何にした？\n女子学生：公立高校の教育費の推移にしたわ。\n男子学生：へぇ。やっぱりだんだん高くなってるんだろうな。\n女子学生：ところがそうでもないのよ。平成16年から20年までは、どの年も約50万円くらいで推移してるんだけど、平成22年に急に40万以下に下がってるのよね。\n男子学生：そうなんだ。で、そのあとは？\n女子学生：そんなに大幅には変わってないみたい。`,
+        vocab: [
+          { kana: "こうりつこうこう", kanji: "公立高校", meaning: "公立高中" },
+          { kana: "きょういくひ", kanji: "教育費", meaning: "教育经费/教育费" },
+          { kana: "すいい", kanji: "推移", meaning: "推移，变化趋势" },
+          { kana: "だんだん", kanji: "だんだん", meaning: "逐渐，渐渐" },
+          { kana: "ところが", kanji: "ところが", meaning: "然而，可是（转折）" },
+          { kana: "おおはば", kanji: "大幅", meaning: "大幅度" }
+        ]
+      },
+      {
+        id: "0109",
+        title: "聴読解 9番",
+        audio: "0109.mp3",
+        answer: "① (解答番号 9)",
+        intro: "専門学校の職員が履修の仕方について説明しています。この職員の話によると、正しく科目を履修しているのはどれですか。",
+        script: `これから、本年度の履修科目について説明いたします。まず、専門科目は4科目選択してください。科目名にⅠ、Ⅱと付いているものは、前期がⅠ、後期がⅡという意味です。ですから、同じ科目名のⅠとⅡを1年間にわたって履修することになります。次にデザイン実技ですが、4つのうち2つを必ず選択してください。最後の、美術研修旅行は必修です。国内か海外のどちらかを選んでください。国内は京都・奈良、海外はパリの美術館に行きます。`,
+        vocab: [
+          { kana: "りしゅう", kanji: "履修", meaning: "修读，选修（课程）" },
+          { kana: "せんもんかもく", kanji: "専門科目", meaning: "专业课" },
+          { kana: "ぜんき・こうき", kanji: "前期・後期", meaning: "上学期·下学期" },
+          { kana: "にわたって", kanji: "〜にわたって", meaning: "长达…，历经…" },
+          { kana: "じつぎ", kanji: "実技", meaning: "实践技能，实操课" },
+          { kana: "ひっしゅう", kanji: "必修", meaning: "必修" },
+          { kana: "けんしゅうりょこう", kanji: "研修旅行", meaning: "研修旅行，游学" }
+        ]
+      },
+      {
+        id: "0110",
+        title: "聴読解 10番",
+        audio: "0110.mp3",
+        answer: "② (解答番号 10)",
+        intro: "水族館のスタッフがメダカの習性について話しています。このスタッフが最後にする質問の答えはどれですか。",
+        script: `メダカには、同じ場所にとどまり続けようとする習性があります。ほかの魚はそうしようとしてもなかなかできないのですが、メダカは発達した視覚によって、自分の周りの景色をしっかり認識し、その景色が変わらないように泳ぐことで、同じ場所にとどまり続けることができるのです。では、なぜそのようなことをする必要があるのかというと、生まれた場所からあまり遠くに離れないようにするためと言われています。もし水の流れに従って泳いでしまうと、元居た場所からどんどん遠くに行ってしまいますよね。ですから、メダカは水の流れに逆らうように泳いで、結果的に自分の位置が変わらないようにしているのです。\nでは、ここで1つ実験をしてみましょう。大きな容器にメダカを入れて、時計周りの水流を作り出してみます。このとき、メダカはどのように泳ぐと考えられますか。`,
+        vocab: [
+          { kana: "しゅうせい", kanji: "習性", meaning: "习性" },
+          { kana: "とどまる", kanji: "とどまる", meaning: "停留，留在原地" },
+          { kana: "しかく", kanji: "視覚", meaning: "视觉" },
+          { kana: "にんしき", kanji: "認識", meaning: "认识，识别" },
+          { kana: "さからう", kanji: "逆らう", meaning: "逆着，违背，对抗" },
+          { kana: "ようき", kanji: "容器", meaning: "容器" },
+          { kana: "とけいまわり", kanji: "時計周り", meaning: "顺时针方向" },
+          { kana: "すいりゅう", kanji: "水流", meaning: "水流" }
+        ]
+      },
+      {
+        id: "0111",
+        title: "聴読解 11番",
+        audio: "0111.mp3",
+        answer: "② (解答番号 11)",
+        intro: "女子学生がフリーマーケットに出店する商品について話しています。この女子学生が出品を考えているものとして適当なのはどれですか。",
+        script: `最近、ナッツ類が注目を浴びているので、私たちのお店でもナッツを使ったパンやお菓子を出したらどうかなと思います。今回のフリーマーケットには、中高年の方の来場も期待できそうなので、健康にいいということを前面に出していきましょう。ナッツ類にはビタミンやカルシウムが多く含まれていると言われているんですけど、今回は高血圧や糖尿病などの生活習慣病に効果のあるナッツを選びたいと思います。その中でもいろいろあってどれにするか迷うところなんですが、やっぱり仕入れ値はなるべく抑えたいと思っています。`,
+        vocab: [
+          { kana: "しゅってん", kanji: "出店", meaning: "开店，出摊" },
+          { kana: "ちゅうもくをあびる", kanji: "注目を浴びる", meaning: "受到瞩目，备受关注" },
+          { kana: "ぜんめんにだす", kanji: "前面に出す", meaning: "摆在前面，突出强调" },
+          { kana: "こうけつあつ", kanji: "高血圧", meaning: "高血压" },
+          { kana: "とうにょうびょう", kanji: "糖尿病", meaning: "糖尿病" },
+          { kana: "せいかつしゅうかんびょう", kanji: "生活習慣病", meaning: "生活习惯病（慢性病）" },
+          { kana: "しいれね", kanji: "仕入れ値", meaning: "进货价，成本价" },
+          { kana: "おさえる", kanji: "抑える", meaning: "控制，压低" }
+        ]
+      },
+      {
+        id: "0112",
+        title: "聴読解 12番",
+        audio: "0112.mp3",
+        answer: "③ (解答番号 12)",
+        intro: "会社員の男性が、カレンダーを見ながら花見の予定について話しています。この会社の人たちはいつ花見に行くことにしましたか。",
+        script: `今年も会社のメンバーでお花見に行こうと思います。去年は3月31日に桜の開花宣言がありました。今年は寒い日が続いているせいか、去年より開花宣言がちょうど1週間遅れるそうです。満開になるのが開花からだいたい1週間とすると、お花見はこの辺りがいいのではないでしょうか。\n平日はみなさん、忙しいでしょうし、急な残業もあるでしょうから週末にしましょうか。会費はだいたい3000円くらいにしようと思っています。参加できそうな人は3月29日までに私に連絡してください。`,
+        vocab: [
+          { kana: "かいかせんげん", kanji: "開花宣言", meaning: "开花宣言（官方宣布樱花盛开）" },
+          { kana: "まんかい", kanji: "満開", meaning: "满开，盛开" },
+          { kana: "へいじつ", kanji: "平日", meaning: "平日，工作日" },
+          { kana: "ざんぎょう", kanji: "残業", meaning: "加班" },
+          { kana: "かいひ", kanji: "会費", meaning: "会费，活动凑份子费用" }
+        ]
+      },
+      {
+        id: "0113",
+        title: "聴解 13番",
+        audio: "0113.mp3",
+        answer: "③ (解答番号 13)",
+        intro: "男子学生が、大学の窓口で奨学金の申請をしています。この窓口の人は、男子学生に、このあとすぐ何をするように言っていますか。",
+        script: `男子学生：奨学金の申請の窓口はこちらですか？\n職員：はい。書類は持って来てますか？\n男子学生：いや、これから申請したいんですが。\n職員：あ、そうですか。では、こちらが申請書となります。\n男子学生：ありがとうございます。\n職員：申請する際には、そちらの申請書に必要事項を記入して、写真を貼ってください。あと、成績証明書と、主任教授の推薦書が必要です。\n男子学生：成績証明書は、去年の成績のものですか？\n職員：はい、そうです。あと、保証人の方に直筆でサインをしていただく必要もありますが、大丈夫ですか？\n男子学生：え、直筆じゃないとダメなんですか？ 実は、保証人の親は地方の実家にいて、すぐには会えないんですけど。\n職員：それですと、書類を郵送して、サインをしていただくしか……。締め切り期限も迫っていますから、まずそちらを優先されたほうがいいと思いますよ。\n男子学生：わかりました。そうします。\n\n【選択肢】\n1. 証明写真を撮る。\n2. 成績証明書を申請する。\n3. 書類を実家に送る。\n4. 教授に推薦書を書いてもらう。`,
+        vocab: [
+          { kana: "しょうがくきん", kanji: "奨学金", meaning: "奖学金" },
+          { kana: "しんせいしょ", kanji: "申請書", meaning: "申请书" },
+          { kana: "せいせきしょうめいしょ", kanji: "成績証明書", meaning: "成绩证明书" },
+          { kana: "すいせんしょ", kanji: "推薦書", meaning: "推荐信" },
+          { kana: "ほしょうにん", kanji: "保証人", meaning: "保证人，担保人" },
+          { kana: "じきひつ", kanji: "直筆", meaning: "亲笔" },
+          { kana: "ゆうそう", kanji: "郵送", meaning: "邮寄" },
+          { kana: "せまる", kanji: "迫る", meaning: "临近，迫近" },
+          { kana: "ゆうせん", kanji: "優先", meaning: "优先" }
+        ]
+      },
+      {
+        id: "0114",
+        title: "聴解 14番",
+        audio: "0114.mp3",
+        answer: "③ (解答番号 14)",
+        intro: "女子学生と男子学生が、洋服のしみ取りについて話しています。この男子学生は、この会話のあとどうしますか。",
+        script: `女子学生：あら、服にしみがついてるわよ。\n男子学生：あ、ほんとだ。いつついたんだろう。帰ったら洗わないと。\n女子学生：でも、何のしみかわからないと、どうやって洗えばいいかわからないでしょう？\n男子学生：うん。でも、覚えがないんだよなあ。\n女子学生：そういう場合はね、まずしみのついた部分に霧吹きで軽く水を吹きつけてみるといいよ。それで、その部分が黒く際立って見えるようであれば水溶性のしみ。逆に、あんまり色が変わらないようなら油のしみってわかるの。\n男子学生：なるほど、油は水をはじくから色が変わらないわけか。\n女子学生：そういうこと。油のしみだったら、最初ベンジンをつけて叩いたあと、アルコールにつけるとよく落ちるわよ。それでも取れないようなら、お酢につけてみるのもおすすめよ。\n男子学生：へえ。詳しいね。早速、あとで試してみるよ。\n\n【選択肢】\n1. しみの部分をアルコールにつける。\n2. しみの部分をお酢につける。\n3. しみの部分を水で濡らす。\n4. しみの部分にベンジンをつけて叩く。`,
+        vocab: [
+          { kana: "しみとり", kanji: "しみ取り", meaning: "去污渍，去斑" },
+          { kana: "きりふき", kanji: "霧吹き", meaning: "喷雾器，喷水壶" },
+          { kana: "きわだつ", kanji: "際立つ", meaning: "显眼，突出，明显" },
+          { kana: "すいようせい", kanji: "水溶性", meaning: "水溶性" },
+          { kana: "はじく", kanji: "はじく", meaning: "排斥，弹开（拒水）" },
+          { kana: "おす", kanji: "お酢", meaning: "醋" },
+          { kana: "さっそく", kanji: "早速", meaning: "立刻，马上" }
+        ]
+      },
+      {
+        id: "0115",
+        title: "聴解 15番",
+        audio: "0115.mp3",
+        answer: "② (解答番号 15)",
+        intro: "先生が、「調べる」ということについて話しています。この先生は、調べることの目的は何だと言っていますか。",
+        script: `大学では、レポート課題が出ます。その課題に答えるために、まずやらなければならないのは、調べるということです。もちろん、与えられた課題について自分の頭で考えるのが最も重要なことではありますが、その前に自分で情報を得るという行為が求められるのです。\nというのも、どんな課題も過去に誰かが挑戦し、あるいは既に答えを出しているかもしれないからです。この点をあらかじめ調べておかないと、効率が悪いだけでなく、本当は誰かが既に言っていることなのに、あたかも自分独自の見解であるかのように書いてしまうことにもなりかねません。悪気はないのかもしれませんが、学問の世界においてこれは不正だとみなされてしまうのです。\n\n【選択肢】\n1. 説得力を増すために、知識を蓄積する。\n2. 先行研究の有無や内容を確認する。\n3. 課題のヒントとなるような情報を探す。\n4. 自分が嘘を言っていないかどうか確認する。`,
+        vocab: [
+          { kana: "あらかじめ", kanji: "あらかじめ", meaning: "预先，事先" },
+          { kana: "あたかも", kanji: "あたかも", meaning: "简直就像，宛如" },
+          { kana: "どくじ", kanji: "独自", meaning: "独自，独创" },
+          { kana: "けんかい", kanji: "見解", meaning: "见解，看法" },
+          { kana: "なりかねない", kanji: "〜なりかねない", meaning: "很有可能导致…（不良结果）" },
+          { kana: "わるぎ", kanji: "悪気", meaning: "恶意" },
+          { kana: "ふせい", kanji: "不正", meaning: "不正当，学术不端/作弊" },
+          { kana: "せんこうけんきゅう", kanji: "先行研究", meaning: "先行研究，前人研究" }
+        ]
+      },
+      {
+        id: "0116",
+        title: "聴解 16番",
+        audio: "0116.mp3",
+        answer: "③ (解答番号 16)",
+        intro: "先生が、昆虫について話しています。この先生は、昆虫の寿命が短いことがどのようなことをもたらしたと言っていますか。",
+        script: `昆虫は、私たち人間はもちろん、ほかの動物に比べて非常に寿命が短いですね。1年未満のものがほとんどです。成虫の寿命に限れば、1カ月未満の命しかありません。その短い間に、オスはメスを探して交尾をし、また交尾をすませたメスは産卵に全力を注ぐのです。とても凝縮された一生だと言えるでしょう。\nさて、昆虫の一生が短いということは、世代交代が早いということです。ということは、進化の速度あるいは種が分かれる速度も速くなります。その速度は、脊椎動物とは比較になりません。その結果、多様な形態や生態をもった昆虫が生まれました。地球が「虫の惑星」と呼ばれるのには、このようなわけがあったのです。\n\n【選択肢】\n1. 昆虫の社会の競争が激しくなった。\n2. メスの産む卵の数が増えた。\n3. さまざまな種類の昆虫が生まれた。\n4. 特定の種が爆発的に繁殖した。`,
+        vocab: [
+          { kana: "じゅみょう", kanji: "寿命", meaning: "寿命" },
+          { kana: "せいちゅう", kanji: "成虫", meaning: "成虫" },
+          { kana: "こうび", kanji: "交尾", meaning: "交配，交尾" },
+          { kana: "さんらん", kanji: "産卵", meaning: "产卵" },
+          { kana: "ぎょうしゅく", kanji: "凝縮", meaning: "凝缩，浓缩" },
+          { kana: "せだいこうたい", kanji: "世代交代", meaning: "世代更替" },
+          { kana: "せきついどうぶつ", kanji: "脊椎動物", meaning: "脊椎动物" },
+          { kana: "けいたい・せいたい", kanji: "形態・生態", meaning: "形态·生态" }
+        ]
+      },
+      {
+        id: "0117",
+        title: "聴解 17番",
+        audio: "0117.mp3",
+        answer: "③ (解答番号 17)",
+        intro: "先生が、ハチドリという鳥について話しています。この先生は、ハチドリはなぜホバリングという能力を身につけたのだと言っていますか。",
+        script: `ハチドリはとても小柄な鳥です。小柄であるということは、体温や生命を維持するために、大型の鳥と比べ、体の大きさに対して多くの食料を必要とするということを意味します。そのために、ハチドリは体をさまざまに発達させてきました。\nハチドリは、花の蜜を主食としています。花の蜜は高カロリーで吸収効率が高いためです。ハチドリの長いくちばしと長い舌は、花びらの奥にくちばしを差し込んで蜜をなめるために発達したものです。\nまた、ハチドリはホバリングという能力を持っています。ホバリングとは、飛んだまま空中で停止することです。花の蜜を吸うには、花の周りに止まれる場所がなければなりませんが、そのような場所はまれです。そのため、ハチドリはホバリングという能力を身につけたのです。\n\n【選択肢】\n1. 花の奥にある蜜を上手くなめられるようにするため\n2. 体温が低下しがちなのでそれを防ぐため\n3. 飛んだまま花の蜜を吸えるようにするため\n4. 木についている虫を飛んだまま食べられるようにするため`,
+        vocab: [
+          { kana: "こがら", kanji: "小柄", meaning: "体格娇小" },
+          { kana: "いじ", kanji: "維持", meaning: "维持" },
+          { kana: "はなのみつ", kanji: "花の蜜", meaning: "花蜜" },
+          { kana: "きゅうしゅうこうりつ", kanji: "吸収効率", meaning: "吸收效率" },
+          { kana: "くちばし", kanji: "くちばし", meaning: "鸟喙，鸟嘴" },
+          { kana: "さしこむ", kanji: "差し込む", meaning: "插入，伸入" },
+          { kana: "ていし", kanji: "停止", meaning: "停止，悬停" },
+          { kana: "まれ", kanji: "まれ", meaning: "稀少，罕见" }
+        ]
+      },
+      {
+        id: "0118",
+        title: "聴解 18番",
+        audio: "0118.mp3",
+        answer: "③ (解答番号 18)",
+        intro: "先生が、ライマメという植物について話しています。この先生は、ライマメはどうやって自分の身を守っていると言っていますか。",
+        script: `ライマメにとっての害虫の一つに、ナミハダニというダニがいます。ナミハダニは、植物を食べるタイプのダニで、体は0.6ミリ程度の小さなダニですが、繁殖力が旺盛で、植物に大きな被害をもたらします。ライマメは、その被害を最小限に食い止めるためにある方法をとっています。\nライマメは、ナミハダニに葉っぱをかじられると、そのかじられた葉から、ナミハダニの天敵であるチリカブリダニという肉食性のダニをおびき寄せる匂いを出すのです。この匂いはまた、ほかのライマメの個体にも伝わり、そのメッセージを受け取ったライマメは、チリカブリダニをおびき寄せる準備を始めるというのですから驚きです。\n\n【選択肢】\n1. 害虫が嫌いな匂いを発する。\n2. 天敵を体の中に住まわせている。\n3. 害虫の天敵を引き寄せる匂いを発する。\n4. 体の中で毒を生成する。`,
+        vocab: [
+          { kana: "がいちゅう", kanji: "害虫", meaning: "害虫" },
+          { kana: "はんしょくりょく", kanji: "繁殖力", meaning: "繁殖力" },
+          { kana: "おうせい", kanji: "旺盛", meaning: "旺盛" },
+          { kana: "くいとめる", kanji: "食い止める", meaning: "阻止，遏制" },
+          { kana: "かじる", kanji: "かじる", meaning: "啃，咬" },
+          { kana: "てんてき", kanji: "天敵", meaning: "天敌" },
+          { kana: "にくしょくせい", kanji: "肉食性", meaning: "肉食性" },
+          { kana: "おびきよせる", kanji: "おびき寄せる", meaning: "引诱，吸引过来" }
+        ]
+      },
+      {
+        id: "0119",
+        title: "聴解 19番",
+        audio: "0119.mp3",
+        answer: "① (解答番号 19)",
+        intro: "先生が、子どもと大人の脳の働きについて話しています。この先生は、子どもが大人よりも神経衰弱が得意なのはなぜだと言っていますか。",
+        script: `皆さんは「神経衰弱」というゲームを知っていますか。トランプをすべて裏返し、自分の記憶を頼りに同じ数字のペアを取っていく、というゲームです。この神経衰弱は、大人よりも子どもが得意だと言われています。子どものほうが脳の中身が少ないので、ものを覚えやすいからだと言われることがありますが、そうではありません。\n子どもは、トランプの配置を直接、地図のようにパターン化して頭の中に入れます。一方、大人は理屈で覚えようとします。例えば、「上から1段目の左から4番目はハートの6で、その左が……」といった具合です。これでは情報量が多くなりすぎて、短時間ではとても頭に入りません。このような事情があるため、子どものほうが大人よりも神経衰弱が得意だと言われているのです。\n\n【選択肢】\n1. トランプの配置を1枚の絵として覚えられるから\n2. 脳の余っている容量が大人よりも大きいから\n3. 神経衰弱の勝ち方を熟知しているから\n4. 短時間で多くの情報を記憶することができるから`,
+        vocab: [
+          { kana: "しんけいすいじゃく", kanji: "神経衰弱", meaning: "翻牌记忆游戏（神经衰弱）" },
+          { kana: "うらがえす", kanji: "裏返す", meaning: "翻面，背面朝上" },
+          { kana: "たよりに", kanji: "頼りに", meaning: "依靠，凭借" },
+          { kana: "はいち", kanji: "配置", meaning: "排列，配置" },
+          { kana: "パターンか", kanji: "パターン化", meaning: "模式化，图形化" },
+          { kana: "りくつ", kanji: "理屈", meaning: "道理，逻辑推演" },
+          { kana: "じゅくち", kanji: "熟知", meaning: "熟知，非常清楚" }
+        ]
+      },
+      {
+        id: "0120",
+        title: "聴解 20番",
+        audio: "0120.mp3",
+        answer: "① (解答番号 20)",
+        intro: "先生が、ミカンについて話しています。この先生は、ミカンを投げるとなぜ甘くなると言っていますか。",
+        script: `よくミカンを投げると甘くなると言いますが、皆さんの中にもやったことがある人がいるのではないでしょうか。たしかに、甘くなるというのは本当です。ミカンは衝撃に弱くて、1メートルの高さから落とすと、酸っぱい成分の量が20%も減少してしまうのです。ですから、甘くなるとはいっても、酸味が減るだけで、糖分が増えているわけではありません。また、酸味以外の成分も変わっていますから、味も落ちます。さらに、投げたり落としたりという衝撃は、ミカンの呼吸量を増やします。呼吸量が増えると、水分が増えますから腐りやすくなります。\n\n【選択肢】\n1. 酸っぱい成分が減るから\n2. 呼吸の量が増えるから\n3. いろいろな成分が変化するから\n4. 甘い成分が増えるから`,
+        vocab: [
+          { kana: "しょうげき", kanji: "衝撃", meaning: "冲击，撞击" },
+          { kana: "げんしょう", kanji: "減少", meaning: "减少" },
+          { kana: "さんみ", kanji: "酸味", meaning: "酸味" },
+          { kana: "とうぶん", kanji: "糖分", meaning: "糖分" },
+          { kana: "こきゅうりょう", kanji: "呼吸量", meaning: "呼吸量" },
+          { kana: "くさりやすい", kanji: "腐りやすい", meaning: "容易腐烂" }
+        ]
+      },
+      {
+        id: "0121",
+        title: "聴解 21番",
+        audio: "0121.mp3",
+        answer: "② (解答番号 21)",
+        intro: "先生が、新しいスポーツを続けるための方法について話しています。この先生は、どのようなアドバイスをしていますか。",
+        script: `新しいスポーツを始めてみることは素晴らしいことですが、始めてもすぐにやめてしまった、という話もよく聞きます。今までしていなかったスポーツを続けていくには、強い意志と努力が必要ですから、無理もない話かもしれません。そのようなことにならないためには、やはりそれなりの工夫がいります。\n例えば、クラブや教室に入るというのも一つの手です。入るにはお金が必要ですから、すぐにやめたらもったいないという気持ちがはたらきます。また、そのスポーツをするうえで必要な服装やシューズを買ってしまうというのもいいでしょう。一流の選手が使うようなものをいきなり買う必要はありませんが、ケチらずにそれなりの服装や用具を整えることです。これも、やめたらもったいないという気持ちにさせるためです。\n\n【選択肢】\n1. スポーツを始めたことを周りの人に言う。\n2. スポーツを始めるにあたって、それなりの投資をする。\n3. 友達と一緒にスポーツを始める。\n4. 高価なスポーツウェアや用具を一通りそろえる。`,
+        vocab: [
+          { kana: "いし", kanji: "意志", meaning: "意志" },
+          { kana: "むりもない", kanji: "無理もない", meaning: "情有可原，难怪" },
+          { kana: "くふう", kanji: "工夫", meaning: "想办法，下功夫" },
+          { kana: "もったいない", kanji: "もったいない", meaning: "可惜，浪费" },
+          { kana: "ケチる", kanji: "ケチる", meaning: "吝啬，抠门" },
+          { kana: "ととのえる", kanji: "整える", meaning: "置办整齐，准备好" },
+          { kana: "とうし", kanji: "投資", meaning: "投资" }
+        ]
+      },
+      {
+        id: "0122",
+        title: "聴解 22番",
+        audio: "0122.mp3",
+        answer: "④ (解答番号 22)",
+        intro: "男子学生と女子学生が、車のタイヤについて話しています。この女子学生は、新しいタイヤの何を一番評価していますか。",
+        script: `男子学生：最近は、車の本体の進化もすごいけど、タイヤも進化してるんだよ。\n女子学生：例えば？\n男子学生：ランフラットタイヤっていうのは、パンクして空気圧がゼロになっても、ある程度の距離を安全に走行できるんだ。\n女子学生：へえ。それなら、自分でタイヤが交換できない人でも、ガソリンスタンドとかまでなんとかたどり着ければ、安心ってわけね。\n男子学生：そういうこと。タイヤ交換中の事故っていうのも結構あるみたいだからね。あと、今までの車には、予備のタイヤが積まれてたんだけど、ほとんど使われないまま廃棄されてたんだって。それがこのタイヤの登場によって、最近では予備のタイヤを積む必要がなくなったんだよ。\n女子学生：単なる技術革新じゃなくて、地球にもやさしいってところがすばらしいわね。\n\n【選択肢】\n1. タイヤ交換中の事故を減らせること\n2. 自分でタイヤを交換する必要がないこと\n3. パンクしても走り続けられること\n4. 資源の無駄の削減に役立っていること`,
+        vocab: [
+          { kana: "パンク", kanji: "パンク", meaning: "爆胎，漏气" },
+          { kana: "くうきあつ", kanji: "空気圧", meaning: "胎压，气压" },
+          { kana: "そうこう", kanji: "走行", meaning: "行驶" },
+          { kana: "たどりつく", kanji: "たどり着く", meaning: "好不容易到达" },
+          { kana: "よび", kanji: "予備", meaning: "备用（备胎）" },
+          { kana: "はいき", kanji: "廃棄", meaning: "废弃，报废" },
+          { kana: "ぎじゅつかくしん", kanji: "技術革新", meaning: "技术革新" },
+          { kana: "さくげん", kanji: "削減", meaning: "削减，减少" }
+        ]
+      },
+      {
+        id: "0123",
+        title: "聴解 23番",
+        audio: "0123.mp3",
+        answer: "① (解答番号 23)",
+        intro: "先生が、防災の授業で話しています。この先生が、地震に弱い土地かどうかを知るためにすすめている方法として、正しくないものはどれですか。",
+        script: `地震による危険のサインは、家の周りにあるものから読み取ることができます。例えば、家の近くに川がある場合、その家が建っている場所は、昔は川や池だった場所を埋め立てた土地である可能性があります。このような土地は、地震のときに揺れが大きくなります。しかし、中には、昔は川や池だったけれども、今はその痕跡がまったく残っていないという土地もあります。そういう場合は、昔の地図を調べれば、その土地がかつて川や池であったかどうかということがわかります。また、昔の地名にもヒントが隠されています。その土地の昔の名前に、「沼」や「池」など、水に関係する文字が入っている地域は、かつて川に挟まれた場所だった可能性が高いのです。\n\n【選択肢】\n1. 昔その土地で大きな地震があったかどうかを調べる。\n2. 周りに川がないかを確認する。\n3. かつて川があったかどうか、昔の地図で調べる。\n4. その土地の昔の名前を調べる。`,
+        vocab: [
+          { kana: "ぼうさい", kanji: "防災", meaning: "防灾" },
+          { kana: "うめたてる", kanji: "埋め立てる", meaning: "填埋（填河/填海造地）" },
+          { kana: "ゆれ", kanji: "揺れ", meaning: "摇晃，震动" },
+          { kana: "こんせき", kanji: "痕跡", meaning: "痕迹，踪迹" },
+          { kana: "かつて", kanji: "かつて", meaning: "曾经，昔日" },
+          { kana: "ぬま", kanji: "沼", meaning: "沼泽，泥沼" },
+          { kana: "はさまれる", kanji: "挟まれる", meaning: "被夹在中间" }
+        ]
+      },
+      {
+        id: "0124",
+        title: "聴解 24番",
+        audio: "0124.mp3",
+        answer: "① (解答番号 24)",
+        intro: "女子学生と男子学生が話しています。この女子学生の話によると、年をとっても1年を長く感じられるようにするには、どうすればよいですか。",
+        script: `女子学生：この前、心理学の授業で、年をとるにつれて1年がどんどん短く感じるようになるのはなぜか、っていう話を聞いたの。\n男子学生：へえ、ちゃんと理由があるんだ。\n女子学生：まあ、仮説ではあるけどね。初めての場所に行ったときに経験する時間の感覚と似てるんだって。\n男子学生：えーっと、行きは時間が長く感じるのに、帰りは早く感じるってこと？\n女子学生：そう。行きは、初めて見るものばかりで新鮮な刺激をたくさん受けるから、時間が長く感じられるんだけど、帰りは、一度見たものばかりで刺激が乏しいので、時間を短く感じてしまうんだって。\n男子学生：なるほど。それは確かに言えるね。\n\n【選択肢】\n1. 積極的に未知の分野に取り組む。\n2. 頻繁に子どものころを思い出す。\n3. 物事により真剣に取り組む。\n4. 規則正しい生活を心がける。`,
+        vocab: [
+          { kana: "しんりがく", kanji: "心理学", meaning: "心理学" },
+          { kana: "かせつ", kanji: "仮説", meaning: "假说" },
+          { kana: "しんせん", kanji: "新鮮", meaning: "新鲜" },
+          { kana: "しげき", kanji: "刺激", meaning: "刺激" },
+          { kana: "とぼしい", kanji: "乏しい", meaning: "匮乏，缺乏" },
+          { kana: "みちのぶんや", kanji: "未知の分野", meaning: "未知的领域" },
+          { kana: "とりくむ", kanji: "取り組む", meaning: "致力于，钻研" }
+        ]
+      },
+      {
+        id: "0125",
+        title: "聴解 25番",
+        audio: "0125.mp3",
+        answer: "④ (解答番号 25)",
+        intro: "講師が、仕事の取り組み方について話しています。この講師の話によると、仕事の要領が悪い人は、どこに問題があるのですか。",
+        script: `仕事の要領が悪く、なかなか仕事が終わらない人がいます。多くの場合、そういう人は、「どこまでできるかわからないけれど、とにかく頑張る」という考え方をしています。このような考え方を「積み上げ思考」といいます。好きなことを極めていくときなどには向いている考え方ですが、ビジネスでは、ダラダラ長時間働いているだけという結果を招きかねません。ですから、そのような人は、「逆算思考」に切り替える必要があります。逆算思考とは、ゴールから逆算して行動を決めるという考え方です。まず、ゴールを設定し、そこに至るまでに、何をどのようにするのかを決めてしまえば、その後の行動が取りやすくなります。\n\n【選択肢】\n1. 仕事の処理能力が劣っている。\n2. 仕事に優先順位をつけられない。\n3. 仕事に対する意欲があまりない。\n4. 仕事のゴールがはっきりしていない。`,
+        vocab: [
+          { kana: "ようりょうがわるい", kanji: "要領が悪い", meaning: "不得要领，办事效率低" },
+          { kana: "つみあげしこう", kanji: "積み上げ思考", meaning: "累加思维（走一步算一步）" },
+          { kana: "きわめる", kanji: "極める", meaning: "钻研到极致，登峰造极" },
+          { kana: "まねきかねない", kanji: "招きかねない", meaning: "很可能招致（不良后果）" },
+          { kana: "ぎゃくさんしこう", kanji: "逆算思考", meaning: "逆向推算思维（倒推法）" },
+          { kana: "きりかえる", kanji: "切り替える", meaning: "切换，转换" },
+          { kana: "おとる", kanji: "劣る", meaning: "逊色，低劣" }
+        ]
+      },
+      {
+        id: "0126",
+        title: "聴解 26番",
+        audio: "0126.mp3",
+        answer: "① (解答番号 26)",
+        intro: "先生が、道具のデザインについて話しています。この先生は、道具のデザインについて、どのように考えていますか。",
+        script: `本来、道具というものは、目的を果たすための必要最低限の機能しか持っていませんでした。というより、そのように作られていたといったほうがよいかもしれません。しかし、さまざまな技術の発達により、製品としての道具は、多機能で複雑なものに変わりつつあります。その結果、特別な指導を受けないと使いにくい道具が増えました。\nそこで、近年では、道具から複雑さを排除しようという動きが出てきています。ただし、すべての装飾を道具から排除し、スタイルを単純化すべきだとは思いません。使い手によって、複雑さの基準はさまざまですし、機能だけの道具はつまらないと感じる人もいるからです。あくまで道具は、本来の使用目的を邪魔しない範囲で、デザインされるべきだと私は考えます。\n\n【選択肢】\n1. きちんと使えるなら、適度なデザイン性はあってもいい。\n2. デザインは、できるだけ単純なほうがいい。\n3. 機能の多い道具は、デザインが複雑なほうがむしろ使いやすい。\n4. 現代では、機能よりもデザインのほうが大切である。`,
+        vocab: [
+          { kana: "はたす", kanji: "果たす", meaning: "完成，实现（目的）" },
+          { kana: "ひつようさいていげん", kanji: "必要最低限", meaning: "最低限度必要" },
+          { kana: "たきのう", kanji: "多機能", meaning: "多功能" },
+          { kana: "はいじょ", kanji: "排除", meaning: "排除，剔除" },
+          { kana: "そうしょく", kanji: "装飾", meaning: "装饰" },
+          { kana: "たんじゅんか", kanji: "単純化", meaning: "简单化，简化" },
+          { kana: "てきど", kanji: "適度", meaning: "适度，恰当" }
+        ]
+      },
+      {
+        id: "0127",
+        title: "聴解 27番",
+        audio: "0127.mp3",
+        answer: "① (解答番号 27)",
+        intro: "講師が、子どものおもちゃについて話しています。この講師は、親に対してどのようなアドバイスをしていますか。",
+        script: `おもちゃは、常に子どもの知的好奇心の対象となります。「なぜ動くのか」「中はどうなっているのか」ということが、子どもはとても気になるのです。ですから、ときに子どもは、おもちゃを壊そうとします。多くの親は、それをよくないことと考え、壊すのをやめさせようとしますが、それは子どもの知的発達にとって、大変もったいないことをしています。ただし、ただ見ていればよいというわけではありません。あとで再び組み立てられるような壊し方を教えるのです。つまり、一つひとつの部品から完成品が出来上がるまでの過程を逆にたどらせるということです。そうすることによって、子どもに論理的な思考の訓練をさせることができます。\n\n【選択肢】\n1. 子どもにおもちゃの適切な壊し方を教える。\n2. 子どもには完成していないおもちゃを買い与える。\n3. 子どもがおもちゃを壊すのを静かに見守る。\n4. 子どもがおもちゃを壊していたらやめさせる。`,
+        vocab: [
+          { kana: "ちてきこうきしん", kanji: "知的好奇心", meaning: "求知欲，知性好奇心" },
+          { kana: "ちてきはったつ", kanji: "知的発達", meaning: "智力发育，心智发展" },
+          { kana: "くみたてる", kanji: "組み立てる", meaning: "组装，装配" },
+          { kana: "ぶひん", kanji: "部品", meaning: "零件，部件" },
+          { kana: "かてい", kanji: "過程", meaning: "过程" },
+          { kana: "たどる", kanji: "たどる", meaning: "追溯，寻着（脉络）" },
+          { kana: "ろんりてきしこう", kanji: "論理的思考", meaning: "逻辑思维" }
+        ]
+      }
+    ];
+
+    // === 状态管理 ===
+    let currentIndex = 0;
+    let showAllMeaning = false;
+    let onlyStarred = false;
+    let starredMap = JSON.parse(localStorage.getItem('eju_starred_vocab') || '{}');
+    const speeds = [0.8, 1.0, 1.2, 1.5];
+    let speedIdx = 1;
+
+    // === DOM 元素 ===
+    const questionSelect = document.getElementById('questionSelect');
+    const questionShortTitle = document.getElementById('questionShortTitle');
+    const questionIntro = document.getElementById('questionIntro');
+    const vocabListEl = document.getElementById('vocabList');
+    const scriptBox = document.getElementById('scriptBox');
+    const answerBox = document.getElementById('answerBox');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('playBtn');
+    const progressBar = document.getElementById('progressBar');
+    const curTimeEl = document.getElementById('curTime');
+    const durTimeEl = document.getElementById('durTime');
+    const audioStatus = document.getElementById('audioStatus');
+
+    // === 初始化下拉框 ===
+    function initSelect() {
+      questionSelect.innerHTML = EJU_DATA.map((item, idx) =>
+        `<option value="${idx}">${item.id} · ${item.title}</option>`
+      ).join('');
+      questionSelect.addEventListener('change', (e) => {
+        loadQuestion(parseInt(e.target.value, 10));
+      });
+    }
+
+    // === 加载指定题目 ===
+    function loadQuestion(idx) {
+      if (idx < 0 || idx >= EJU_DATA.length) return;
+      currentIndex = idx;
+      const data = EJU_DATA[idx];
+      questionSelect.value = idx;
+      questionShortTitle.textContent = `第1回 ${data.title}`;
+      questionIntro.textContent = data.intro;
+
+      scriptBox.classList.remove('show');
+      answerBox.classList.remove('show');
+      scriptBox.textContent = data.script;
+      answerBox.innerHTML = `本题正答：<span class="answer-badge">${data.answer}</span>`;
+
+      audioPlayer.src = data.audio;
+      audioPlayer.playbackRate = speeds[speedIdx];
+      playBtn.textContent = '▶';
+      audioStatus.textContent = `当前音频: ${data.audio} (${idx + 1}/${EJU_DATA.length})`;
+
+      renderVocab();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // === 渲染单词卡片 ===
+    function renderVocab() {
+      const data = EJU_DATA[currentIndex];
+      const list = data.vocab.filter((v) => {
+        const key = `${data.id}_${v.kana}`;
+        return !onlyStarred || starredMap[key];
+      });
+
+      if (list.length === 0) {
+        vocabListEl.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-sub);">本题暂无收藏的生词</div>`;
+        return;
+      }
+
+      vocabListEl.innerHTML = list.map((v, i) => {
+        const key = `${data.id}_${v.kana}`;
+        const isStarred = !!starredMap[key];
+        const hideClass = (i === 0 || showAllMeaning) ? '' : 'hidden';
+        const cleanKana = v.kana.replace(/〜|・/g, ' ');
+        return `
+          <div class="vocab-card">
+            <div class="vocab-left">
+              <div class="kana">${v.kana}</div>
+              <button class="tts-btn" onclick="speakJapanese('${cleanKana}')" title="点击发音">♪</button>
+              <div class="meaning-box ${hideClass}" onclick="this.classList.toggle('hidden')">
+                <div class="kanji">${v.kanji}</div>
+                <div class="meaning">${v.meaning}</div>
+                <div class="dots">・・・</div>
+              </div>
+            </div>
+            <button class="star-btn ${isStarred ? 'starred' : ''}" onclick="toggleStar('${key}', this)">
+              ${isStarred ? '★' : '☆'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // === 方法二：在线真人词典语音流 + 本地优选自然语音兜底 ===
+    const wordAudio = new Audio();
+    let jpVoice = null;
+
+    function loadBestJapaneseVoice() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices();
+      jpVoice = voices.find(v => v.lang.includes('ja') && v.name.includes('Nanami')) ||
+                voices.find(v => v.lang.includes('ja') && v.name.includes('Keita')) ||
+                voices.find(v => v.lang.includes('ja') && v.name.includes('Natural')) ||
+                voices.find(v => v.lang.includes('ja') && v.name.includes('Google')) ||
+                voices.find(v => v.lang.includes('ja') && (v.name.includes('Kyoko') || v.name.includes('Otoya'))) ||
+                voices.find(v => v.lang.includes('ja'));
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadBestJapaneseVoice;
+      loadBestJapaneseVoice();
+    }
+
+    function fallbackLocalSpeech(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      if (!jpVoice) loadBestJapaneseVoice();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ja-JP';
+      if (jpVoice) utter.voice = jpVoice;
+      utter.rate = 1.0;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function speakJapanese(text) {
+      const url = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&le=jap`;
+      wordAudio.pause();
+      wordAudio.src = url;
+      wordAudio.play().catch(() => {
+        fallbackLocalSpeech(text);
+      });
+    }
+
+    // === 收藏切换 ===
+    function toggleStar(key, btnEl) {
+      if (starredMap[key]) {
+        delete starredMap[key];
+        btnEl.classList.remove('starred');
+        btnEl.textContent = '☆';
+      } else {
+        starredMap[key] = true;
+        btnEl.classList.add('starred');
+        btnEl.textContent = '★';
+      }
+      localStorage.setItem('eju_starred_vocab', JSON.stringify(starredMap));
+      if (onlyStarred) renderVocab();
+    }
+
+    // === 顶部与上下题按钮 ===
+    document.getElementById('toggleAllMeaningBtn').addEventListener('click', () => {
+      showAllMeaning = !showAllMeaning;
+      renderVocab();
+    });
+
+    document.getElementById('themeBtn').addEventListener('click', (e) => {
+      document.body.classList.toggle('dark');
+      e.target.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    });
+
+    document.getElementById('filterStarBtn').addEventListener('click', (e) => {
+      onlyStarred = !onlyStarred;
+      e.target.classList.toggle('active', onlyStarred);
+      renderVocab();
+    });
+
+    document.getElementById('prevQBtn').addEventListener('click', () => {
+      if (currentIndex > 0) loadQuestion(currentIndex - 1);
+    });
+    document.getElementById('nextQBtn').addEventListener('click', () => {
+      if (currentIndex < EJU_DATA.length - 1) loadQuestion(currentIndex + 1);
+    });
+
+    document.getElementById('toggleScriptBtn').addEventListener('click', () => {
+      scriptBox.classList.toggle('show');
+    });
+    document.getElementById('toggleAnswerBtn').addEventListener('click', () => {
+      answerBox.classList.toggle('show');
+    });
+
+    // === 音频播放器控制 ===
+    function formatTime(sec) {
+      if (!sec || isNaN(sec)) return '00:00';
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (audioPlayer.paused) {
+        audioPlayer.play().catch(() => {
+          audioStatus.textContent = `未找到本地音频 ${EJU_DATA[currentIndex].audio}`;
+        });
+      } else {
+        audioPlayer.pause();
+      }
+    });
+
+    audioPlayer.addEventListener('play', () => playBtn.textContent = '⏸');
+    audioPlayer.addEventListener('pause', () => playBtn.textContent = '▶');
+    audioPlayer.addEventListener('loadedmetadata', () => {
+      progressBar.max = audioPlayer.duration || 0;
+      durTimeEl.textContent = formatTime(audioPlayer.duration);
+    });
+    audioPlayer.addEventListener('timeupdate', () => {
+      progressBar.value = audioPlayer.currentTime;
+      curTimeEl.textContent = formatTime(audioPlayer.currentTime);
+    });
+
+    progressBar.addEventListener('input', (e) => {
+      audioPlayer.currentTime = parseFloat(e.target.value);
+    });
+
+    document.getElementById('rewBtn').addEventListener('click', () => {
+      audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5);
+    });
+    document.getElementById('fwdBtn').addEventListener('click', () => {
+      audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + 5);
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    });
+    document.getElementById('speedBtn').addEventListener('click', (e) => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      audioPlayer.playbackRate = speeds[speedIdx];
+      e.target.textContent = `${speeds[speedIdx]}x`;
+    });
+
+    initSelect();
+    loadQuestion(0);
+  </script>
+</body>
+</html>
